@@ -1,0 +1,52 @@
+const API_KEY = "YOUR_API_KEY_HERE";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Currency Converter + Tax + Charts</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Live Currency Converter with Tax & Trends</h1>
+
+        <div class="converter">
+            <div class="input-group">
+                <label>Amount:</label>
+                <input type="number" id="amount" value="1" min="0">
+            </div>
+
+            <div class="input-group">
+                <label>From:</label>
+                <select id="fromCurrency"></select>
+            </div>
+
+            <div class="input-group">
+                <label>To:</label>
+                <select id="toCurrency"></select>
+            </div>
+
+            <div class="input-group">
+                <label>Tax (%):</label>
+                <input type="number" id="taxRate" value="0" min="0" max="100">
+            </div>
+
+            <button id="convertBtn">Convert</button>
+
+            <div class="result">
+                <p id="convertedResult">Converted Amount: —</p>
+                <p id="taxResult">With Tax: —</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Exchange Rate Trends</h2>
+            <canvas id="rateChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
