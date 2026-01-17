@@ -1,20 +1,22 @@
-const API_KEY = "5e3d33b51eb979213c03015f";
-const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}`;
+const API_URL = "https://api.frankfurter.app/latest";
 
-// Elements
 const fromCurrency = document.getElementById("fromCurrency");
 const toCurrency = document.getElementById("toCurrency");
 const amountEl = document.getElementById("amount");
 const taxRateEl = document.getElementById("taxRate");
 const convertedResult = document.getElementById("convertedResult");
 const taxResult = document.getElementById("taxResult");
-const convertBtn = document.getElementById("convertBtn");
+const trendIndicator = document.getElementById("trendIndicator");
 
-// Populate currency selectors
+let lastRate = null;
+
+// Load currencies
 async function loadCurrencies() {
-    const res = await fetch(`${BASE_URL}/latest/USD`);
+    const res = await fetch(API_URL);
     const data = await res.json();
-    const currencies = Object.keys(data.conversion_rates);
+    const currencies = Object.keys(data.rates);
+
+    currencies.unshift("USD");
 
     currencies.forEach(cur => {
         fromCurrency.innerHTML += `<option>${cur}</option>`;
@@ -27,55 +29,49 @@ async function loadCurrencies() {
 
 loadCurrencies();
 
-// Convert & display
-convertBtn.addEventListener("click", convertCurrency);
-
+// Convert currency
 async function convertCurrency() {
     const amount = parseFloat(amountEl.value);
     const taxRate = parseFloat(taxRateEl.value);
     const from = fromCurrency.value;
     const to = toCurrency.value;
 
-    const res = await fetch(`${BASE_URL}/latest/${from}`);
+    const res = await fetch(`${API_URL}?from=${from}&to=${to}`);
     const data = await res.json();
 
-    const rate = data.conversion_rates[to];
+    const rate = data.rates[to];
     const converted = amount * rate;
-    const taxAmount = converted * (taxRate / 100);
-    const totalWithTax = converted + taxAmount;
+    const tax = converted * (taxRate / 100);
+    const total = converted + tax;
 
     convertedResult.textContent = `Converted Amount: ${converted.toFixed(4)} ${to}`;
-    taxResult.textContent = `With Tax (${taxRate}%): ${totalWithTax.toFixed(4)} ${to}`;
+    taxResult.textContent = `With Tax (${taxRate}%): ${total.toFixed(4)} ${to}`;
 
-    drawTrendChart(from, to);
+    updateTrend(rate);
 }
 
-// Chart
-let chart = null;
+// Trend logic
+function updateTrend(currentRate) {
+    if (lastRate === null) {
+        trendIndicator.textContent = "No previous data";
+        lastRate = currentRate;
+        return;
+    }
 
-async function drawTrendChart(from, to) {
-    // Grab a simple trend (last 7 days)
-    const trendRes = await fetch(`${BASE_URL}/history/${from}/${to}/7`); 
-    // *API-dependent — some providers structured differently
-    const trendData = await trendRes.json();
+    const change = ((currentRate - lastRate) / lastRate) * 100;
 
-    const labels = Object.keys(trendData.conversion_rates);
-    const rates = Object.values(trendData.conversion_rates);
+    if (change > 0) {
+        trendIndicator.textContent = `🔼 Rising by ${change.toFixed(2)}%`;
+        trendIndicator.style.color = "green";
+    } else if (change < 0) {
+        trendIndicator.textContent = `🔽 Falling by ${Math.abs(change).toFixed(2)}%`;
+        trendIndicator.style.color = "red";
+    } else {
+        trendIndicator.textContent = "No change";
+        trendIndicator.style.color = "gray";
+    }
 
-    const ctx = document.getElementById("rateChart").getContext("2d");
-
-    if (chart) chart.destroy();
-
-    chart = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels,
-            datasets: [{
-                label: `${from}/${to} Trend`,
-                data: rates,
-                borderColor: "#007bff",
-                fill: false
-            }]
-        }
-    });
+    lastRate = currentRate;
 }
+
+document.getElementById("convertBtn").addEventListener("click", convertCurrency);
